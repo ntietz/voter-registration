@@ -8,7 +8,8 @@ table_def = {
         (3, 'last_name', 'TEXT'),
         (4, 'first_name', 'TEXT'),
         (7, 'date_of_birth', 'DATE'),
-        (8, 'registration_date', 'DATE')
+        (8, 'registration_date', 'DATE'),
+        (10, 'party_code', 'TEXT')
       ]
     }
 
