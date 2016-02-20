@@ -1,5 +1,5 @@
 # Read in the voter records.
-import csv, sqlite3
+import csv, psycopg2
 
 table_def = {
     'name': 'voter_records',
@@ -13,11 +13,12 @@ table_def = {
     }
 
 def create_table(conn, table_def):
-  columns = map(lambda c: '%s %s' % (c[1], c[2]), table_def['columns'])
-  name = table_def['name']
-  query = '''CREATE TABLE %s (%s)''' % (name, ', '.join(columns))
-  conn.execute(query)
-  conn.commit()
+  with conn.cursor() as cursor:
+    columns = map(lambda c: '%s %s' % (c[1], c[2]), table_def['columns'])
+    name = table_def['name']
+    query = '''DROP TABLE IF EXISTS %s; CREATE TABLE %s (%s)''' % (name, name, ', '.join(columns))
+    cursor.execute(query)
+    conn.commit()
 
 def load_table(conn, table_def, path):
   indices = []
@@ -40,9 +41,10 @@ def load_table(conn, table_def, path):
     vals = []
     for (idx, c) in ic_pairs:
       vals.append(c(row[idx]))
-    query = '''INSERT INTO %s VALUES (%s)''' % (table_def['name'], ','.join(['?']*len(vals)))
+    query = '''INSERT INTO %s VALUES (%s)''' % (table_def['name'], ','.join(['%s']*len(vals)))
     #print query, vals
-    conn.execute(query, vals)
+    with conn.cursor() as cursor:
+      cursor.execute(query, vals)
 
   with open(path, 'rb') as csv_file:
     reader = csv.reader(csv_file, delimiter=',')
@@ -51,7 +53,7 @@ def load_table(conn, table_def, path):
       insert_one(row)
     conn.commit()
 
-with sqlite3.connect('data/voter_records.sl3') as conn:
+with psycopg2.connect('dbname=voters user=nicholas') as conn:
   create_table(conn, table_def)
   load_table(conn, table_def, 'data/voter_records.csv')
 
